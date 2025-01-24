@@ -6,7 +6,6 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import lombok.Setter;
 import model.Courier;
-import org.junit.Before;
 
 import static io.restassured.RestAssured.given;
 
@@ -14,8 +13,8 @@ import static io.restassured.RestAssured.given;
 public class CourierApiSteps {
     private Courier courier;
 
-    @Before
-    public void setUp() {
+    // Статический блок для настройки RestAssured
+    static {
         RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
         RestAssured.basePath = "/api/v1/courier";
     }
@@ -25,7 +24,9 @@ public class CourierApiSteps {
                 .contentType(ContentType.JSON)
                 .body(courier)
                 .when()
-                .request(method, endpoint);
+                .request(method, endpoint)
+                .then().log().all()
+                .extract().response();
     }
 
     @Step("Создание курьера")
@@ -40,11 +41,18 @@ public class CourierApiSteps {
 
     @Step("Удаление курьера")
     public void deleteCourier() {
-        Integer courierId = loginCourier()
-                .then().log().all()
-                .extract().path("id");
+        Response loginResponse = loginCourier();
+        Integer courierId = loginResponse.path("id");
+
         if (courierId != null) {
-            sendRequest("/" + courierId, "DELETE");
+            Response deleteResponse = sendRequest("/" + courierId, "DELETE");
+            if (deleteResponse.statusCode() == 200) {
+                System.out.println("Курьер успешно удалён.");
+            } else {
+                System.err.println("Ошибка при удалении курьера: " + deleteResponse.statusLine());
+            }
+        } else {
+            System.err.println("Не удалось получить ID курьера для удаления.");
         }
     }
 }

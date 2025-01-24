@@ -6,7 +6,6 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import lombok.Setter;
 import model.Order;
-import org.junit.Before;
 
 import static io.restassured.RestAssured.given;
 
@@ -15,8 +14,8 @@ public class OrderApiSteps {
 
     private Order order;
 
-    @Before
-    public void setUp() {
+    // Статический блок для настройки RestAssured
+    static {
         RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
         RestAssured.basePath = "/api/v1/orders";
     }
@@ -27,11 +26,18 @@ public class OrderApiSteps {
                 .contentType(ContentType.JSON)
                 .body(order)
                 .when()
-                .post();
+                .post()
+                .then().log().all()
+                .extract().response();
     }
 
     @Step("Получение заказа")
     public Response getOrder() {
-        return given().log().all().get();
+        return given().log().all()
+                .contentType(ContentType.JSON)
+                .when()
+                .get()
+                .then().log().all()
+                .extract().response();
     }
 }
